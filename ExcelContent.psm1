@@ -20,7 +20,7 @@ function Get-ExcelContent{
   $excel = New-Object -ComObject Excel.Application
 
   # ヘッダー
-  $line = "ブック名, シート名, セル番地, 値"
+  $line = "ブック名,シート名,セル番地,値"
   $line | Write-Output
   #$line | Add-Content $result.FullName
 
