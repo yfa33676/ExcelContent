@@ -24,7 +24,7 @@ $books = $books | ? Name -match $BookName
 
 # ヘッダー
 $line = "ブック名, シート名, セル番地, 値"
-$line | Out-Host
+$line | Write-Output
 $line | Add-Content $result.FullName
 
 # エクセルを起動
@@ -79,7 +79,7 @@ for($i = 0; $i -lt $books.Count; $i++){
             $text = $cell.Text -Replace "`n","``n"
             if($text -ne "" -and $text -match $Pattern){
                 $line = $book.Name + "," + $sheet.Name + "," + [string]$cell.Address($false, $false) + "," + $text
-                $line | Out-Host
+                $line | Write-Output
                 $line | Add-Content $result.FullName
             }
         }
