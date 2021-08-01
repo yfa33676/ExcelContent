@@ -1,10 +1,10 @@
 param(
     [Parameter(Position = 0)]
     [string[]]$Path = ".\*.xls*", # ファイルパス
-    [string]$BookName, # ブック名
-    [string]$SheetName, # シート名
-    [string]$Range, # セル範囲
-    [string]$Pattern # 検索文字列
+    [string]$BookName = "", # ブック名
+    [string]$SheetName = "", # シート名
+    [string]$Range = "", # セル範囲
+    [string]$Pattern = "" # 検索文字列
 )
 
 if($Pattern -eq "" -and $BookName -eq "" -and $SheetName -eq "" -and $Range -eq ""){

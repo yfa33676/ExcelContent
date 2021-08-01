@@ -2,10 +2,10 @@ function Get-ExcelContent{
   param(
       [Parameter(Position = 0)]
       [string[]]$Path = ".\*.xls*", # ファイルパス
-      [string]$Pattern, # 検索文字列
-      [string]$BookName, # ブック名
-      [string]$SheetName, # シート名
-      [string]$Range # セル範囲
+      [string]$Pattern = "" , # 検索文字列
+      [string]$BookName = "", # ブック名
+      [string]$SheetName = "", # シート名
+      [string]$Range = "" # セル範囲
   )
 
   ## 結果CSV
