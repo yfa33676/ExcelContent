@@ -68,19 +68,19 @@ function Get-ExcelContent{
                     # セルのテキストを取得
                     $text = $cell.Text -Replace "`n","``n"
                     if($text -ne "" -and $text -match $Pattern){
-                        [PSCustomObject]@{ブック名 = $book.Name; シート名 = $sheet.Name; セル番地 = $cell.Address($false, $false); 値 = $text} | Write-Output
+                        [PSCustomObject]@{ブック名 = $book.Name; シート名 = $sheet.Name; セル範囲 = $cell.Address($false, $false); 値 = $text} | Write-Output
                     }
                 }
             }
-            
-            # ブックを閉じる
-            $book.Close(0)
         }
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(0)
 
         # リソース解放
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
-    }	
-    end {
+
         # エクセルを終了
         $excel.Quit()
 
@@ -120,15 +120,15 @@ function Get-ExcelSheets{
             foreach($sheet in $sheets){
                 [PSCustomObject]@{ブック名 = $book.Name; シート名 = $sheet.Name} | Write-Output
             }
-            
-            # ブックを閉じる
-            $book.Close(0)
         }
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(0)
 
         # リソース解放
         [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
-    }	
-    end {
+
         # エクセルを終了
         $excel.Quit()
 
@@ -138,40 +138,52 @@ function Get-ExcelSheets{
 }
 
 function Set-ExcelContent{
-  param(
-      [Parameter(Position = 0, Mandatory)]
-      [string]$ValuePath # 設定値CSVのパス
-  )
-  # 対象ブックを取得
-  $books = Get-Content -Path $ValuePath | ConvertFrom-Csv | Select-Object ブック名 -Unique | % ブック名 | Get-Item
-  
-  # エクセルを起動
-  $excel = New-Object -ComObject Excel.Application
-  
-  # ブック毎に繰り返し
-  for($i = 0; $i -lt $books.Count; $i++){
-      # ブックを開く
-      $book = $excel.Workbooks.Open($books[$i].FullName, 0, $false)
-      
-      # 対象セルを取得
-      $cells = Get-Content -Path $ValuePath | ConvertFrom-Csv | Where-Object ブック名 -eq $book.Name
-  
-      # セル毎に繰り返し
-      foreach($cell in $cells){
-          $cell.ブック名 + "," + $cell.シート名 + "," + $cell.セル番地 + "," + $cell.値
-          # 対象シートを選択
-          $sheet = $excel.WorkSheets.Item($cell.シート名)
-          # 対象セルに値を設定
-          $sheet.Cells.Range($cell.セル番地).Value2 = $cell.値 -Replace "``n","`n"
-      }
-  
-      # ブックを保存して閉じる
-      $book.Close(1)
-  }
-  # エクセルを終了
-  $excel.Quit()
-  
-  # リソース解放
-  [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
-  [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject]$InputObject, # 設定値オブジェクト
+        [string]$BookName, # ブック名
+        [string]$SheetName, # シート名
+        [string]$Range, # セル範囲
+        [string]$Value # 検索文字列
+    )
+    begin {
+        # エクセルを起動
+        $excel = New-Object -ComObject Excel.Application
+    }
+    process {
+        # 設定値オブジェクトを生成
+        if($null -eq $InputObject){
+            $InputObject = [PSCustomObject]@{ブック名 = $BookName; シート名 = $SheetName; セル範囲 = $Range; 値 = $Value}
+        }
+        # ブック名を取得
+        $FullNames = Get-Item -Path $InputObject.ブック名 | % FullName
+
+        # ブック名毎に繰り返し
+        foreach($FullName in $FullNames){
+            # ブックを開く
+            $book = $excel.Workbooks.Open($FullName)
+            
+            # 対象シートを選択
+            $sheet = $excel.WorkSheets.Item($InputObject.シート名)
+            
+            # 対象セルに値を設定
+            $sheet.Cells.Range($InputObject.セル範囲).Value2 = $InputObject.値 -Replace "``n","`n"
+        }
+        
+        # 出力
+        [PSCustomObject]$InputObject | Write-Output
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(1)
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
+
+        # エクセルを終了
+        $excel.Quit()
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+    }
 }
