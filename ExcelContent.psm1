@@ -141,10 +141,11 @@ function Set-ExcelContent{
     param(
         [Parameter(ValueFromPipeline)]
         [PSCustomObject]$InputObject, # 設定値オブジェクト
+        [Parameter(Position = 0)]
         [string]$BookName, # ブック名
         [string]$SheetName, # シート名
         [string]$Range, # セル範囲
-        [string]$Value # 検索文字列
+        [string]$Value # 設定値
     )
     begin {
         # エクセルを起動
@@ -168,10 +169,176 @@ function Set-ExcelContent{
             
             # 対象セルに値を設定
             $sheet.Cells.Range($InputObject.セル範囲).Value2 = $InputObject.値 -Replace "``n","`n"
+
+            # 出力オブジェクトのブック名を編集
+            $InputObject.ブック名 = $book.Name
+
+            # 出力
+            [PSCustomObject]$InputObject | Write-Output
         }
-        
-        # 出力
-        [PSCustomObject]$InputObject | Write-Output
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(1)
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
+
+        # エクセルを終了
+        $excel.Quit()
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+    }
+}
+
+function Add-ExcelSheets{
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject]$InputObject, # 設定値オブジェクト
+        [Parameter(Position = 0)]
+        [string]$BookName, # ブック名
+        [string]$SheetName # シート名
+    )
+    begin {
+        # エクセルを起動
+        $excel = New-Object -ComObject Excel.Application
+    }
+    process {
+        # 設定値オブジェクトを生成
+        if($null -eq $InputObject){
+            $InputObject = [PSCustomObject]@{ブック名 = $BookName; シート名 = $SheetName}
+        }
+        # ブック名を取得
+        $FullNames = Get-Item -Path $InputObject.ブック名 | % FullName
+
+        # ブック名毎に繰り返し
+        foreach($FullName in $FullNames){
+            # ブックを開く
+            $book = $excel.Workbooks.Open($FullName)
+            
+            # 対象シートを追加
+            $sheet = $book.WorkSheets.Add()
+            try {
+                $sheet.Name = $InputObject.シート名
+            } catch {
+                $_ | Write-Error
+                $sheet.Delete()
+            }
+
+            # 出力オブジェクトのブック名を編集
+            $InputObject.ブック名 = $book.Name
+
+            # 出力
+            [PSCustomObject]$InputObject | Write-Output
+        }
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(1)
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
+
+        # エクセルを終了
+        $excel.Quit()
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+    }
+}
+
+function Delete-ExcelSheets{
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject]$InputObject, # 設定値オブジェクト
+        [Parameter(Position = 0)]
+        [string]$BookName, # ブック名
+        [string]$SheetName # シート名
+    )
+    begin {
+        # エクセルを起動
+        $excel = New-Object -ComObject Excel.Application
+    }
+    process {
+        # 設定値オブジェクトを生成
+        if($null -eq $InputObject){
+            $InputObject = [PSCustomObject]@{ブック名 = $BookName; シート名 = $SheetName}
+        }
+        # ブック名を取得
+        $FullNames = Get-Item -Path $InputObject.ブック名 | % FullName
+
+        # ブック名毎に繰り返し
+        foreach($FullName in $FullNames){
+            # ブックを開く
+            $book = $excel.Workbooks.Open($FullName)
+            
+            # 対象シートを選択
+            $sheet = $excel.WorkSheets.Item($InputObject.シート名)
+            
+            # シートを削除
+            $sheet.Delete()
+
+            # 出力オブジェクトのブック名を編集
+            $InputObject.ブック名 = $book.Name
+
+            # 出力
+            [PSCustomObject]$InputObject | Write-Output
+        }
+    }
+    end {
+        # ブックを閉じる
+        $excel.WorkBooks | % Close(1)
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($book) | Out-Null
+
+        # エクセルを終了
+        $excel.Quit()
+
+        # リソース解放
+        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+    }
+}
+
+function Set-ExcelSheets{
+    param(
+        [Parameter(ValueFromPipeline)]
+        [PSCustomObject]$InputObject, # 設定値オブジェクト
+        [Parameter(Position = 0)]
+        [string]$BookName, # ブック名
+        [string]$SheetName, # シート名
+        [string]$Value # 設定値
+    )
+    begin {
+        # エクセルを起動
+        $excel = New-Object -ComObject Excel.Application
+    }
+    process {
+        # 設定値オブジェクトを生成
+        if($null -eq $InputObject){
+            $InputObject = [PSCustomObject]@{ブック名 = $BookName; シート名 = $SheetName; 値 = $Value}
+        }
+        # ブック名を取得
+        $FullNames = Get-Item -Path $InputObject.ブック名 | % FullName
+
+        # ブック名毎に繰り返し
+        foreach($FullName in $FullNames){
+            # ブックを開く
+            $book = $excel.Workbooks.Open($FullName)
+            
+            # 対象シートを選択
+            $sheet = $excel.WorkSheets.Item($InputObject.シート名)
+            
+            # シート名を変更
+            $sheet.Name = $InputObject.値
+
+            # 出力オブジェクトのブック名を編集
+            $InputObject.ブック名 = $book.Name
+
+            # 出力
+            [PSCustomObject]$InputObject | Write-Output
+        }
     }
     end {
         # ブックを閉じる
