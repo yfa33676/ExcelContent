@@ -256,7 +256,7 @@ function Add-ExcelSheet{
             # 対象シートを追加
             $sheet = $excel.WorkSheets.Add()
             try {
-                $sheet.Name = $InputObject.シート名
+                $sheet.Name = [string]$InputObject.シート名
             } catch {
                 $sheet.Delete()
                 $_ | Write-Error
@@ -362,6 +362,10 @@ function Set-ExcelSheet{
         # 設定値オブジェクトを生成
         if($null -eq $InputObject){
             $InputObject = [PSCustomObject]@{ブック名 = $BookName; シート名 = $SheetName; 値 = $Value}
+        } elseif($InputObject | Get-Member -Name 値){
+
+        } else {
+            $InputObject = [PSCustomObject]@{ブック名 = $InputObject.ブック名; シート名 = $InputObject.シート名; 値 = $Value}
         }
         # ブック名を取得
         $FullNames = Get-Item -Path $InputObject.ブック名
@@ -375,7 +379,7 @@ function Set-ExcelSheet{
             $sheet = $excel.WorkSheets.Item($InputObject.シート名)
             
             # シート名を変更
-            $sheet.Name = $InputObject.値
+            $sheet.Name = [string]$InputObject.値
 
             # 出力オブジェクトのブック名を編集
             $InputObject.ブック名 = $book.Name
